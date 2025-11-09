@@ -73,6 +73,10 @@ COPY --from=build /app /app
 
 WORKDIR /app
 
+# 复制所有数据库类型的 Prisma schema，让启动脚本动态选择
+COPY --from=build /usr/src/app/apps/server/prisma-postgresql ./prisma-postgresql
+COPY --from=build /usr/src/app/apps/server/prisma-sqlite ./prisma-sqlite
+
 EXPOSE 4000
 
 ENV NODE_ENV=production
@@ -81,6 +85,7 @@ ENV SERVER_ORIGIN_URL=""
 ENV MAX_REQUEST_PER_MINUTE=60
 ENV AUTH_CODE=""
 ENV DATABASE_URL=""
+ENV DATABASE_TYPE=""
 
 RUN chmod +x ./docker-bootstrap.sh
 

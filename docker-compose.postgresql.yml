@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: wewerss
+      POSTGRES_PASSWORD: wewerss_password
+      POSTGRES_DB: wewerss
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wewerss"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: cooderl/wewe-rss-postgresql:latest
+    ports:
+      - 4000:4000
+    environment:
+      # 数据库连接地址
+      - DATABASE_URL=postgresql://wewerss:wewerss_password@db:5432/wewerss?schema=public
+      - DATABASE_TYPE=postgresql
+      # 服务接口请求授权码
+      - AUTH_CODE=123567
+      # 提取全文内容模式
+      # - FEED_MODE=fulltext
+      # 定时更新订阅源Cron表达式
+      # - CRON_EXPRESSION=35 5,17 * * *
+      # 服务接口请求限制，每分钟请求次数
+      # - MAX_REQUEST_PER_MINUTE=60
+      # 外网访问时，需设置为服务器的公网 IP 或者域名地址
+      # - SERVER_ORIGIN_URL=http://localhost:4000
+      # 全部更新时每个公众号获取的页数
+      # - REFRESH_ALL_PAGES=1
+      # 连续更新延迟时间（秒）
+      # - UPDATE_DELAY_TIME=60
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

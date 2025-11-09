@@ -41,7 +41,10 @@
 
 ### Docker Compose 部署
 
-参考 [docker-compose.yml](https://github.com/cooderl/wewe-rss/blob/main/docker-compose.yml) 和 [docker-compose.sqlite.yml](https://github.com/cooderl/wewe-rss/blob/main/docker-compose.sqlite.yml)
+参考:
+- [docker-compose.yml](https://github.com/cooderl/wewe-rss/blob/main/docker-compose.yml) - MySQL（推荐）
+- [docker-compose.postgresql.yml](https://github.com/cooderl/wewe-rss/blob/main/docker-compose.postgresql.yml) - PostgreSQL
+- [docker-compose.sqlite.yml](https://github.com/cooderl/wewe-rss/blob/main/docker-compose.sqlite.yml) - SQLite（不推荐）
 
 ### Docker 命令启动
 
@@ -115,8 +118,8 @@ pnpm run start:server
 
 | 变量名                   | 说明                                                                    | 默认值                      |
 | ------------------------ | ----------------------------------------------------------------------- | --------------------------- |
-| `DATABASE_URL`           | **必填** 数据库地址，例如 `mysql://root:123456@127.0.0.1:3306/wewe-rss` | -                           |
-| `DATABASE_TYPE`          | 数据库类型，使用 SQLite 时需填写 `sqlite`                               | -                           |
+| `DATABASE_URL`           | **必填** 数据库地址<br>MySQL: `mysql://root:123456@host:3306/wewe-rss`<br>PostgreSQL: `postgresql://user:pass@host:5432/wewe-rss`<br>SQLite: `file:../data/wewe-rss.db` | -                           |
+| `DATABASE_TYPE`          | 数据库类型: `mysql`(默认) / `postgresql` / `sqlite`                     | `mysql`                     |
 | `AUTH_CODE`              | 服务端接口请求授权码，空字符或不设置将不启用 (`/feeds`路径不需要)       | -                           |
 | `SERVER_ORIGIN_URL`      | 服务端访问地址，用于生成RSS完整路径                                     | -                           |
 | `MAX_REQUEST_PER_MINUTE` | 每分钟最大请求次数                                                      | 60                          |

@@ -32,6 +32,7 @@ export class TrpcService {
   mergeRouters = this.trpc.mergeRouters;
   request: AxiosInstance;
   updateDelayTime = 60;
+  refreshAllPages = 1;
 
   private readonly logger = new Logger(this.constructor.name);
 
@@ -41,10 +42,10 @@ export class TrpcService {
   ) {
     const { url } =
       this.configService.get<ConfigurationType['platform']>('platform')!;
-    this.updateDelayTime =
-      this.configService.get<ConfigurationType['feed']>(
-        'feed',
-      )!.updateDelayTime;
+    const feedConfig =
+      this.configService.get<ConfigurationType['feed']>('feed')!;
+    this.updateDelayTime = feedConfig.updateDelayTime;
+    this.refreshAllPages = feedConfig.refreshAllPages;
 
     this.request = Axios.create({ baseURL: url, timeout: 15 * 1e3 });
 
@@ -304,17 +305,74 @@ export class TrpcService {
       return;
     }
     const mps = await this.prismaService.feed.findMany();
-    this.isRefreshAllMpArticlesRunning = true;
-    try {
-      for (const { id } of mps) {
-        await this.refreshMpArticlesAndUpdateFeed(id);
+    this.logger.log(
+      `refreshAllMpArticlesAndUpdateFeed: 开始更新，共 ${mps.length} 个公众号`,
+    );
 
-        await new Promise((resolve) =>
-          setTimeout(resolve, this.updateDelayTime * 1e3),
+    this.isRefreshAllMpArticlesRunning = true;
+    let successCount = 0;
+    let failedCount = 0;
+
+    try {
+      for (let i = 0; i < mps.length; i++) {
+        const { id, mpName } = mps[i];
+        this.logger.log(
+          `refreshAllMpArticlesAndUpdateFeed: [${i + 1}/${mps.length}] 开始更新公众号: ${mpName} (${id})`,
         );
+
+        try {
+          // 获取多页文章（由环境变量 REFRESH_ALL_PAGES 控制）
+          for (let page = 1; page <= this.refreshAllPages; page++) {
+            this.logger.log(
+              `refreshAllMpArticlesAndUpdateFeed: [${i + 1}/${mps.length}] ${mpName} - page=${page}/${this.refreshAllPages}`,
+            );
+
+            const { hasHistory } = await this.refreshMpArticlesAndUpdateFeed(
+              id,
+              page,
+            );
+
+            // 如果当前页返回的文章数少于 defaultCount，说明没有更多文章了
+            if (hasHistory === 0) {
+              this.logger.log(
+                `refreshAllMpArticlesAndUpdateFeed: [${i + 1}/${mps.length}] ${mpName} - 已获取完所有文章 (page ${page})`,
+              );
+              break;
+            }
+
+            // 如果不是最后一页，添加延迟
+            if (page < this.refreshAllPages) {
+              await new Promise((resolve) =>
+                setTimeout(resolve, this.updateDelayTime * 1e3),
+              );
+            }
+          }
+
+          successCount++;
+          this.logger.log(
+            `refreshAllMpArticlesAndUpdateFeed: [${i + 1}/${mps.length}] ${mpName} - 更新成功`,
+          );
+        } catch (err) {
+          failedCount++;
+          this.logger.error(
+            `refreshAllMpArticlesAndUpdateFeed: [${i + 1}/${mps.length}] ${mpName} - 更新失败:`,
+            err,
+          );
+          // 继续更新下一个公众号，不中断整个流程
+        }
+
+        // 更新下一个公众号前的延迟
+        if (i < mps.length - 1) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, this.updateDelayTime * 1e3),
+          );
+        }
       }
     } finally {
       this.isRefreshAllMpArticlesRunning = false;
+      this.logger.log(
+        `refreshAllMpArticlesAndUpdateFeed: 更新完成！总计: ${mps.length} 个，成功: ${successCount} 个，失败: ${failedCount} 个`,
+      );
     }
   }
 

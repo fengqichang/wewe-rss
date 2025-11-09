@@ -123,6 +123,7 @@ pnpm run start:server
 | `FEED_MODE`              | 输出模式，可选值 `fulltext` (会使接口响应变慢，占用更多内存)            | -                           |
 | `CRON_EXPRESSION`        | 定时更新订阅源Cron表达式                                                | `35 5,17 * * *`             |
 | `UPDATE_DELAY_TIME`      | 连续更新延迟时间，减少被关小黑屋                                        | `60s`                       |
+| `REFRESH_ALL_PAGES`      | "全部更新"时每个公众号获取的页数（每页20篇），设置过大可能被限流       | `1`                         |
 | `ENABLE_CLEAN_HTML`      | 是否开启正文html清理                                                    | `false`                     |
 | `PLATFORM_URL`           | 基础服务URL                                                             | `https://weread.111965.xyz` |
 

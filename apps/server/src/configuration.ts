@@ -17,6 +17,8 @@ const configuration = () => {
 
   const updateDelayTime = parseInt(`${process.env.UPDATE_DELAY_TIME} || 60`);
 
+  const refreshAllPages = parseInt(`${process.env.REFRESH_ALL_PAGES}` || '1');
+
   const enableCleanHtml = process.env.ENABLE_CLEAN_HTML === 'true';
   return {
     server: { isProd, port, host },
@@ -27,6 +29,7 @@ const configuration = () => {
       originUrl,
       mode: feedMode,
       updateDelayTime,
+      refreshAllPages,
       enableCleanHtml,
     },
     database: {
